@@ -39,7 +39,17 @@ SEIRdem = function(time, state, parameters) {
 ## SEIR model with sinusoidal seasonal forcing (SEIRsine)
 ## CODE ON YOUR OWN
 
-
+SEIRsine <- function(time, state, parameters) {
+  with(as.list(c(state, parameters)), {
+    
+    beta = beta0 * (1 + beta1 * cos(omega * time))
+    dS = mu*N - beta * S * I / N - mu * S
+    dE = beta * S * I / N - alpha * E - mu * E
+    dI = alpha * E - mu * I - gamma * I
+    
+    list(c(dS, dE, dI))
+  })
+}
 
 
 
@@ -82,9 +92,18 @@ if(F){
 }
 
 
+sim0=ode(y=state,times=times,func=SEIRdem,parms=parms0)
+sim1=ode(y=state,times=times,func=SEIRsine,parms=parms1)
+
+tsim0=tail(sim0,365*10); # the last 10 yrs for the SEIRdem
+tsim1=tail(sim1,365*10); # the last 10 yrs for the SEIRsine
 
 
-
+par(mfrow=c(1,1),cex=1,mar=c(3,3,1,1),mgp=c(1.8,.5,0))
+plot(tsim1[,'time'],tsim1[,'I'],ylab='%I',xlab='Time (days)',type='l',lwd=2)
+lines(tsim0[,'time'],tsim0[,'I'],lty=2)
+legend('topright',c('With seasonal forcing', 'No seasonal forcing'),
+       lty=c(1,2),cex=.9,bty='n')
 
 
 
@@ -124,6 +143,15 @@ SEIRterm.corrected <- function(time, state, parameters) {
   })
 }
 
+correction.factor <- (1/365) * ((1 + b.term) * 273 + (1 - b.term) * 92)
+
+beta <- function(day) {
+  beta0 / correction.factor * (1 + b.term * Term[day])
+}
+
+beta(1)
+beta(12)
+beta(50)
 
 
 ## SETTING UP THE SCHOOL TERM-TIME FUNCTION:
